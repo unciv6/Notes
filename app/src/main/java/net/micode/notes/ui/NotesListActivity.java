@@ -28,12 +28,17 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -58,10 +63,17 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.target.ViewTarget;
+import com.bumptech.glide.request.transition.Transition;
 
 import net.micode.notes.data.Notes;
 import net.micode.notes.data.Notes.NoteColumns;
@@ -142,12 +154,18 @@ public class NotesListActivity extends Activity implements OnClickListener, OnIt
     private final static int REQUEST_CODE_OPEN_NODE = 102;
     private final static int REQUEST_CODE_NEW_NODE = 103;
 
+    FrameLayout mRoot;
+    SharedPreferences mSharedPreferences;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.note_list);
         initResources();
 
+        mSharedPreferences = getSharedPreferences("hello", MODE_PRIVATE);
+        mRoot = findViewById(R.id.root);
+        loadbg();
 
         /**
          * Insert an introduction when user firstly use this application
@@ -155,14 +173,35 @@ public class NotesListActivity extends Activity implements OnClickListener, OnIt
         setAppInfoFromRawRes();
     }
 
+    void loadbg() {
+        String bg = mSharedPreferences.getString("bg", null);
+
+        if (bg != null) {
+            Glide.with(mRoot).load(bg).into(new SimpleTarget<Drawable>() {
+                @Override
+                public void onResourceReady(@NonNull Drawable resource, @Nullable Transition<? super Drawable> transition) {
+                    mRoot.setBackground(resource);
+                }
+            });
+        }
+    }
+
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        if (requestCode == 10010 && resultCode == 10086) {
+            String url = data.getStringExtra("result");
+            mSharedPreferences.edit().putString("bg", url).apply();
+            loadbg();
+        }
         if (resultCode == RESULT_OK
                 && (requestCode == REQUEST_CODE_OPEN_NODE || requestCode == REQUEST_CODE_NEW_NODE)) {
             mNotesListAdapter.changeCursor(null);
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
+
     }
 
     private void setAppInfoFromRawRes() {
@@ -234,7 +273,7 @@ public class NotesListActivity extends Activity implements OnClickListener, OnIt
             @Override
             public boolean onLongClick(View v) {
                 Intent intent = new Intent(NotesListActivity.this, PicListActivity.class);
-                NotesListActivity.this.startActivity(intent);
+                NotesListActivity.this.startActivityForResult(intent, 10010);
                 return true;
             }
         });

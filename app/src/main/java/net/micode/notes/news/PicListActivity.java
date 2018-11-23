@@ -1,6 +1,7 @@
 package net.micode.notes.news;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.peak.recycler.base.BaseAdapter;
 import com.peak.recycler.base.BaseHolder;
 import com.peak.recycler.strategy.StrategyAdapter;
 
@@ -22,7 +24,6 @@ import net.micode.notes.notes.R;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.Inflater;
 
 
 /**
@@ -30,7 +31,7 @@ import java.util.zip.Inflater;
  * Created by peak on 2018/11/21.
  */
 public class PicListActivity extends Activity {
-
+    private static final String TAG = "PicListActivity";
     RecyclerView mRecyclerView;
 
     @Override
@@ -41,9 +42,22 @@ public class PicListActivity extends Activity {
 
         StaggeredGridLayoutManager manager = new StaggeredGridLayoutManager(4, StaggeredGridLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(manager);
-        MyAdapter adapter = new MyAdapter();
+        final MyAdapter adapter = new MyAdapter();
         mRecyclerView.setAdapter(adapter);
         loadPic(adapter);
+
+        adapter.setOnItemClickListener(new BaseAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(ViewGroup viewGroup, View view, int i) {
+                Log.i(TAG, "onItemClick: " + adapter.getData(i).toString());
+                Intent intent = new Intent();
+                String url = ((Info) adapter.getData(i)).url;
+                intent.putExtra("result", url);
+                setResult(10086, intent);
+                finish();
+            }
+        });
+
     }
 
 
@@ -99,6 +113,17 @@ public class PicListActivity extends Activity {
         public Info(String name, String url) {
             this.name = name;
             this.url = url;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("{");
+            sb.append("\"name\":\"")
+                    .append(name).append('\"');
+            sb.append(",\"url\":\"")
+                    .append(url).append('\"');
+            sb.append('}');
+            return sb.toString();
         }
     }
 
